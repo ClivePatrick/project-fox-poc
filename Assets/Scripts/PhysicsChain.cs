@@ -142,7 +142,7 @@ public class PhysicsChain : MonoBehaviour
 			}
 
 			//spriteRenderer.color = isPendulumPoint ? Color.red : Color.white;
-			spriteRenderer.color = m_ContactDuration[i] > k_MinContactDuration ? Color.red : Color.white;
+			//spriteRenderer.color = m_ContactDuration[i] > k_MinContactDuration ? Color.red : Color.white;
 		}
 	}
 
