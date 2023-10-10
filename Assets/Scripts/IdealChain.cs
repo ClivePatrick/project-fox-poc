@@ -17,6 +17,7 @@ public class IdealChain : MonoBehaviour
 	public float MaxTensionForce = 1000;
 	public Rigidbody2D Anchor;
 	public Rigidbody2D Player;
+	public bool UseRaycasting = false;
 
 	public bool HasPendulumPoints => m_Points.Count > 2;
 	public Vector2 AnchorPendulumPoint => m_Points[1].Position;
@@ -34,6 +35,8 @@ public class IdealChain : MonoBehaviour
 	private const int k_SweepSteps = 16;
 	private const float k_MinPointDistance = 0.01f;
 
+	[SerializeField]
+	private PhysicsChain m_PhysicsChain;
 	private LineRenderer m_LineRenderer;
 	private List<ChainPoint> m_Points;
 	private DistanceJoint2D m_AnchorDistanceJoint;
@@ -47,6 +50,11 @@ public class IdealChain : MonoBehaviour
 
 	private void Start()
 	{
+		if (m_PhysicsChain == null)
+		{
+			m_PhysicsChain = FindObjectOfType<PhysicsChain>();
+		}
+
 		m_LineRenderer.startWidth = Width;
 		m_LineRenderer.endWidth = Width;
 
@@ -159,12 +167,33 @@ public class IdealChain : MonoBehaviour
 
 	private void UpdatePoints()
 	{
-		AddPoints();
-		RemovePoints();
-
-		foreach (var point in m_Points)
+		if (UseRaycasting)
 		{
-			point.OldPosition = point.Position;
+			AddPoints();
+			RemovePoints();
+
+			foreach (var point in m_Points)
+			{
+				point.OldPosition = point.Position;
+			}
+		}
+		else
+		{
+			ResetPoints();
+
+			var points = Enumerable.Range(0, m_PhysicsChain.Links)
+				.Where(x => m_PhysicsChain.IsPendulumPoint(x))
+				.Select(x => new ChainPoint(m_PhysicsChain.GetLink(x)));
+
+			m_Points.InsertRange(1, points);
+
+			//for (int i = 0; i < m_PhysicsChain.Links; i++)
+			//{
+			//	if (m_PhysicsChain.IsPendulumPoint(i))
+			//	{
+			//		m_PhysicsChain.GetLink(i);
+			//	}
+			//}
 		}
 	}
 
