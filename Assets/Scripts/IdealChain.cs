@@ -165,6 +165,18 @@ public class IdealChain : MonoBehaviour
 		return Vector2.Dot(GetLineNormal(point, previousPoint), pointToNext) > 0;
 	}
 
+	// Creates a chain point from a link in the physics chain
+	private ChainPoint CreateChainPoint(int index)
+	{
+		var link = m_PhysicsChain.GetLink(index);
+		var contact = m_PhysicsChain.GetContactPoint(index);
+
+		var point = new ChainPoint(link);
+		point.Offset = link.transform.InverseTransformPoint(contact.point);
+
+		return point;
+	}
+
 	private void UpdatePoints()
 	{
 		if (UseRaycasting)
@@ -183,17 +195,9 @@ public class IdealChain : MonoBehaviour
 
 			var points = Enumerable.Range(0, m_PhysicsChain.Links)
 				.Where(x => m_PhysicsChain.IsPendulumPoint(x))
-				.Select(x => new ChainPoint(m_PhysicsChain.GetLink(x)));
+				.Select(CreateChainPoint);
 
 			m_Points.InsertRange(1, points);
-
-			//for (int i = 0; i < m_PhysicsChain.Links; i++)
-			//{
-			//	if (m_PhysicsChain.IsPendulumPoint(i))
-			//	{
-			//		m_PhysicsChain.GetLink(i);
-			//	}
-			//}
 		}
 	}
 

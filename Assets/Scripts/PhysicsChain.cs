@@ -23,8 +23,10 @@ public class PhysicsChain : MonoBehaviour
 
 	public int Links => m_Links.Length;
 	public bool IsPendulumPoint(int index) => m_ContactDuration[Mathf.Clamp(index, 0, m_Links.Length - 1)] > k_MinContactDuration;
+	public ContactPoint2D GetContactPoint(int index) => m_Contacts[Mathf.Clamp(index, 0, m_Links.Length - 1)];
 
 	private float[] m_ContactDuration;
+	private ContactPoint2D[] m_Contacts;
 	private Rigidbody2D[] m_Links;
 	//private TargetJoint2D m_AnchorTargetJoint;
 	//private TargetJoint2D m_PlayerTargetJoint;
@@ -119,6 +121,8 @@ public class PhysicsChain : MonoBehaviour
 				{
 					isPendulumPoint = true;
 
+					m_Contacts[i] = contact;
+
 					//Debug.Log(hingeJoint.reactionForce.magnitude);
 
 					//Debug.DrawLine(contact.point, contact.point + contact.normal * contact.normalImpulse, Color.red);
@@ -150,6 +154,7 @@ public class PhysicsChain : MonoBehaviour
 
 		m_Links = new Rigidbody2D[links];
 		m_ContactDuration = new float[links];
+		m_Contacts = new ContactPoint2D[links];
 
 		var position = Anchor.position;
 
