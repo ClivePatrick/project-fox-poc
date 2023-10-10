@@ -13,9 +13,18 @@ public class PhysicsChain : MonoBehaviour
 	//public float TargetJointFrequency = 15;
 	//public float TargetJointDampingRatio = 1;
 
+	private const float k_MinContactImpulse = 2;
+	private const float k_MinContactDuration = 0.1f;
+	//private const float k_MaxContactVelocity = 0.5f;
+	//private const float k_MinReactionForce = 300;
+
 	public float LinkAnchorDistance => LinkSize.y - LinkSize.x;
 	public float LinkAnchorOffset => LinkAnchorDistance / 2;
 
+	public int Links => m_Links.Length;
+	public bool IsPendulumPoint(int index) => m_ContactDuration[Mathf.Clamp(index, 0, m_Links.Length - 1)] > k_MinContactDuration;
+
+	private float[] m_ContactDuration;
 	private Rigidbody2D[] m_Links;
 	//private TargetJoint2D m_AnchorTargetJoint;
 	//private TargetJoint2D m_PlayerTargetJoint;
@@ -66,6 +75,71 @@ public class PhysicsChain : MonoBehaviour
 
 		m_Links.First().MovePosition(Anchor.position);
 		m_Links.Last().MovePosition(Player.position);
+
+		UpdatePendulumPoints();
+	}
+
+	private void UpdatePendulumPoints()
+	{
+		var contacts = new ContactPoint2D[16];
+
+		for (int i = 0; i < m_Links.Length; i++)
+		{
+			var link = m_Links[i];
+
+			//var hingeJoint = link.GetComponent<HingeJoint2D>();
+
+			//if (hingeJoint == null)
+			//{
+			//	continue;
+			//}
+
+			//var reactionForce = hingeJoint.reactionForce.magnitude;
+
+			var spriteRenderer = link.GetComponent<SpriteRenderer>();
+
+			var contactFilter = new ContactFilter2D();
+			contactFilter.SetLayerMask(LayerMask.GetMask("Terrain"));
+
+			var contactsLength = link.GetContacts(contactFilter, contacts);
+
+			var isPendulumPoint = false;
+
+			for (int j = 0; j < contactsLength; j++)
+			{
+				var contact = contacts[j];
+
+				var impulse = Mathf.Sqrt(contact.normalImpulse * contact.normalImpulse + contact.tangentImpulse * contact.tangentImpulse);
+
+				//var velocity = contact.relativeVelocity.magnitude;
+
+				//if (impulse > k_MinContactImpulse && reactionForce > k_MinReactionForce)
+				//if (impulse > k_MinContactImpulse && velocity < k_MaxContactVelocity)
+				if (impulse > k_MinContactImpulse)
+				{
+					isPendulumPoint = true;
+
+					//Debug.Log(hingeJoint.reactionForce.magnitude);
+
+					//Debug.DrawLine(contact.point, contact.point + contact.normal * contact.normalImpulse, Color.red);
+					//Debug.DrawLine(contact.point, contact.point + contact.normal.Perpendicular1() * contact.tangentImpulse, Color.blue);
+
+					break;
+				}
+			}
+
+			if (isPendulumPoint)
+			{
+				m_ContactDuration[i] += Time.fixedDeltaTime;
+			}
+			else
+			{
+				m_ContactDuration[i] = 0;
+			}
+
+			//spriteRenderer.color = isPendulumPoint ? Color.red : Color.white;
+			spriteRenderer.color = m_ContactDuration[i] > k_MinContactDuration ? Color.red : Color.white;
+		}
 	}
 
 	private void CreateCompactChain()
@@ -75,6 +149,7 @@ public class PhysicsChain : MonoBehaviour
 		var linksBetween = Mathf.CeilToInt(Vector2.Distance(Anchor.position, Player.position) / LinkAnchorDistance);
 
 		m_Links = new Rigidbody2D[links];
+		m_ContactDuration = new float[links];
 
 		var position = Anchor.position;
 
